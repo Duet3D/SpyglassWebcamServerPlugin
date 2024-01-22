@@ -1,0 +1,40 @@
+# Last Modified: Mon Jan 22 13:50:11 2024
+#include <tunables/global>
+
+/opt/dsf/plugins/SpyglassWebcamServer/** {
+  #include <abstractions/base>
+  #include <abstractions/bash>
+  #include <abstractions/python>
+  #include <abstractions/user-tmp>
+  #include <abstractions/nameservice>
+
+  /usr/bin/python{3.[0-9]} ix,
+  /usr/local/lib{,32,64}/python{2.[4-7],3,3.[0-9]}/{site,dist}-packages/** r,
+  /opt/vc/lib/** rm,
+
+  capability dac_override,
+  capability dac_read_search,
+  capability sys_nice,
+
+  /opt/dsf/bin/* rm,
+  owner /opt/dsf/plugins/SpyglassWebcamServer/ r,
+  owner /opt/dsf/plugins/SpyglassWebcamServer/** rwmlk,
+  owner /proc/** rw,
+  /sys/** r,
+  /{,var/}run/dsf/** rw,
+
+  /opt/dsf/sd/sys/ r,
+  /opt/dsf/sd/sys/** r,
+  /** mix,
+  network,
+
+  /dev/dma_heap/linux,cma rw,
+  /dev/media* rwmlk,
+  /dev/v4l-subdev* rw,
+  /dev/video* rwmlk,
+  /dev/tty rw,
+  /run/udev/data/* r,
+  /usr/bin/libcamerify rm,
+  /usr/share/libcamera/** r,
+  /usr/libexec/libcamera/* rm,
+}

@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# Stop the plugin first
+if (systemctl is-active -q duetcontrolserver && /opt/dsf/bin/PluginManager -q is-started SpyglassWebcamServer); then
+	/opt/dsf/bin/PluginManager -q stop SpyglassWebcamServer
+	if [[ "$1" == "upgrade" ]]; then
+		# Restart it again when the upgrade is complete
+		touch /opt/dsf/plugins/SpyglassWebcamServer/.start
+	fi
+elif ([[ -e /opt/dsf/conf/plugins.txt ]] && grep -q -e "^SpyglassWebcamServer$" /opt/dsf/conf/plugins.txt ); then
+	sed -e '/^SpyglassWebcamServer$/d' -i /opt/dsf/conf/plugins.txt
+	if [[ "$1" == "upgrade" ]]; then
+		# Restart it again when the upgrade is complete
+		touch /opt/dsf/plugins/SpyglassWebcamServer/.start
+	fi
+fi
+
+# Remove AppArmor profile
+if [ -f /usr/sbin/apparmor_parser ]; then
+	apparmor_parser -R /etc/apparmor.d/dsf.SpyglassWebcamServer
+fi
+
+# Make manifest writable again
+chmod 660 /opt/dsf/plugins/SpyglassWebcamServer.json
+

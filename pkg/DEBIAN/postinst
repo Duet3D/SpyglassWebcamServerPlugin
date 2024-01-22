@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# Set ownership and permissions
+chown dsf:dsf /opt/dsf/plugins/SpyglassWebcamServer.json
+chmod 440 /opt/dsf/plugins/SpyglassWebcamServer.json
+
+chown -R dsf:dsf /opt/dsf/plugins/SpyglassWebcamServer
+chmod 550 /opt/dsf/plugins/SpyglassWebcamServer/dsf/start.sh
+chmod 550 /opt/dsf/plugins/SpyglassWebcamServer/dsf/run.py
+
+chown dsf:dsf /opt/dsf/sd/sys/spyglass.conf
+
+# Reload the plugin manifest
+if [ -f /opt/dsf/plugins/SpyglassWebcamServer/.start ]; then
+        rm /opt/dsf/plugins/SpyglassWebcamServer/.start
+        if (systemctl is-active -q duetcontrolserver && systemctl is-active -q duetpluginservice && systemctl is-active -q duetpluginservice-root); then
+                /opt/dsf/bin/PluginManager -q reload SpyglassWebcamServer
+                /opt/dsf/bin/PluginManager -q start SpyglassWebcamServer
+        else
+                echo "SpyglassWebcamServer" >> /opt/dsf/conf/plugins.txt
+        fi
+fi
+
+# Apply AppArmor profile
+if [ -f /usr/sbin/apparmor_parser ]; then
+	apparmor_parser -r /etc/apparmor.d/dsf.SpyglassWebcamServer
+fi
+
+# Don't block the configuration of other packages if DPS failed to start
+exit 0

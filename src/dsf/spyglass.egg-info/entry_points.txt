@@ -1,0 +1,2 @@
+[console_scripts]
+spyglass = spyglass.cli:main
