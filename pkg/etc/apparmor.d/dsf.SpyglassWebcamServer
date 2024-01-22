@@ -1,4 +1,4 @@
-# Last Modified: Mon Jan 22 13:50:11 2024
+# Last Modified: Thu Feb 17 11:26:25 2022
 #include <tunables/global>
 
 /opt/dsf/plugins/SpyglassWebcamServer/** {
@@ -8,7 +8,8 @@
   #include <abstractions/user-tmp>
   #include <abstractions/nameservice>
 
-  /usr/bin/python{3.[0-9]} ix,
+
+  /usr/bin/python{2.[4-7],3.[0-9]} ix,
   /usr/local/lib{,32,64}/python{2.[4-7],3,3.[0-9]}/{site,dist}-packages/** r,
   /opt/vc/lib/** rm,
 
@@ -27,14 +28,13 @@
   /opt/dsf/sd/sys/** r,
   /** mix,
   network,
-
-  /dev/dma_heap/linux,cma rw,
+  /dev/dma_heap/* rw,
   /dev/media* rwmlk,
-  /dev/v4l-subdev* rw,
+  /dev/v4l-* rwmlk,
   /dev/video* rwmlk,
-  /dev/tty rw,
-  /run/udev/data/* r,
+  /run/udev/data/** rwmlk,
   /usr/bin/libcamerify rm,
   /usr/share/libcamera/** r,
   /usr/libexec/libcamera/* rm,
+
 }
