@@ -6,6 +6,8 @@ This plugin runs the [Spyglass](https://github.com/roamingthings/spyglass) webca
 
 Depending on your choice of camera, extra customizations may be required.
 
+This plugin requires DSF >= 3.5 and Python >= 3.8 (i.e. Debian Bookworm or newer).
+
 ## Setup in DWC
 
 To configure this service in DWC, go to the `Settings` -> `General` page and make the following changes:
@@ -13,6 +15,8 @@ To configure this service in DWC, go to the `Settings` -> `General` page and mak
 - Set `Webcam URL` to `http://[HOSTNAME]:8080/stream`
 - Set `Webcam update interval (in ms)` to `0`
 - Go to the `Job` -> `Webcam` page to see your live stream
+
+For snapshots it is also possible to use `http://[HOSTNAME]:8080/snapshot` instead.
 
 ## Build instructions
 
