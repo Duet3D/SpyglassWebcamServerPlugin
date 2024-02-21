@@ -11,15 +11,15 @@ chmod 550 /opt/dsf/plugins/SpyglassWebcamServer/dsf/run.py
 chown dsf:dsf /opt/dsf/sd/sys/spyglass.conf
 
 # Reload the plugin manifest
-if [ -f /opt/dsf/plugins/SpyglassWebcamServer/.start ]; then
-        rm /opt/dsf/plugins/SpyglassWebcamServer/.start
-        if (systemctl is-active -q duetcontrolserver && systemctl is-active -q duetpluginservice && systemctl is-active -q duetpluginservice-root); then
-                /opt/dsf/bin/PluginManager -q reload SpyglassWebcamServer
-                /opt/dsf/bin/PluginManager -q start SpyglassWebcamServer
-        else
-                echo "SpyglassWebcamServer" >> /opt/dsf/conf/plugins.txt
-        fi
+if (systemctl is-active -q duetcontrolserver && systemctl is-active -q duetpluginservice && systemctl is-active -q duetpluginservice-root); then
+	/opt/dsf/bin/PluginManager -q reload SpyglassWebcamServer
+	if [ -f /opt/dsf/plugins/SpyglassWebcamServer/.start ]; then
+		/opt/dsf/bin/PluginManager -q start SpyglassWebcamServer
+	fi
+else
+	echo "SpyglassWebcamServer" >> /opt/dsf/conf/plugins.txt
 fi
+rm -f /opt/dsf/plugins/SpyglassWebcamServer/.start
 
 # Apply AppArmor profile
 if [ -f /usr/sbin/apparmor_parser ]; then

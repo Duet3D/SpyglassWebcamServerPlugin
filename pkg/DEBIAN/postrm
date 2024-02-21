@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# Reload the plugin manifest
+if (systemctl is-active -q duetcontrolserver && systemctl is-active -q duetpluginservice && systemctl is-active -q duetpluginservice-root); then
+	/opt/dsf/bin/PluginManager -q reload SpyglassWebcamServer
+fi
+
+# Don't block the configuration of other packages if DPS failed to start
+exit 0
