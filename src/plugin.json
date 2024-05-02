@@ -4,7 +4,7 @@
   "author": "Duet3D Ltd",
   "version": "0.13",
   "license": "GPL-3.0-only",
-  "homepage": "https://github.com/Duet3D/SpyglassWebcamServer",
+  "homepage": "https://github.com/Duet3D/SpyglassWebcamServerPlugin",
   "sbcRequired": true,
   "sbcDsfVersion": "3.5",
   "sbcExecutable": "scripts/spyglass",
