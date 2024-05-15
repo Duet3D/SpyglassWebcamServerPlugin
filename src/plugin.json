@@ -10,7 +10,7 @@
   "sbcExecutable": "scripts/spyglass",
   "sbcOutputRedirected": false,
   "sbcConfigFiles": ["spyglass.conf"],
-  "sbcPackageDependencies": ["python3", "python3-libcamera"],
+  "sbcPackageDependencies": ["python3", "python3-libcamera", "python3-picamera2"],
   "sbcPermissions": ["launchProcesses", "networkAccess", "webcamAccess", "readSystem"],
   "tags": [
     "spyglass",

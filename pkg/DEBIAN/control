@@ -3,7 +3,7 @@ Version: VERSION
 Section: electronics
 Priority: standard
 Architecture: all
-Depends: duetpluginservice (>= 3.5), python3 (>= 3.8), python3-libcamera
+Depends: duetpluginservice (>= 3.5), python3 (>= 3.8), python3-libcamera, python3-picamera2
 Maintainer: Duet3D Packaging Authority <pkg@duet3d.com>
 Homepage: https://pkg.duet3d.com
 Description: Spyglass webcam server plugin for DSF
