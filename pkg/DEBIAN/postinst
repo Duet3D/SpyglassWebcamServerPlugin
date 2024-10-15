@@ -8,8 +8,6 @@ chown -R dsf:dsf /opt/dsf/plugins/SpyglassWebcamServer
 chmod 550 /opt/dsf/plugins/SpyglassWebcamServer/dsf/start.sh
 chmod 550 /opt/dsf/plugins/SpyglassWebcamServer/dsf/run.py
 
-chown dsf:dsf /opt/dsf/sd/sys/spyglass.conf
-
 # Reload the plugin manifest
 if (systemctl is-active -q duetcontrolserver && systemctl is-active -q duetpluginservice && systemctl is-active -q duetpluginservice-root); then
 	/opt/dsf/bin/PluginManager -q reload SpyglassWebcamServer

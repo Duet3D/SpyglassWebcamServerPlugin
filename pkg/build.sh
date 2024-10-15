@@ -12,7 +12,6 @@ mkdir -p /tmp/spyglasswebcamserverplugin/spyglasswebcamserverplugin_$version/opt
 cp -r $pwd/DEBIAN /tmp/spyglasswebcamserverplugin/spyglasswebcamserverplugin_$version/DEBIAN
 cp -r $pwd/etc /tmp/spyglasswebcamserverplugin/spyglasswebcamserverplugin_$version/etc
 cp -r ../src/dsf /tmp/spyglasswebcamserverplugin/spyglasswebcamserverplugin_$version/opt/dsf/plugins/SpyglassWebcamServer/dsf
-cp -r ../src/sd /tmp/spyglasswebcamserverplugin/spyglasswebcamserverplugin_$version/opt/dsf/sd
 cp ../src/plugin.json /tmp/spyglasswebcamserverplugin/spyglasswebcamserverplugin_$version/opt/dsf/plugins/SpyglassWebcamServer.json
 
 echo "- Preparing package index"
