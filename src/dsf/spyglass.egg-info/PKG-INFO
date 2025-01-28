@@ -1,9 +1,0 @@
-Metadata-Version: 2.1
-Name: spyglass
-Version: 0.13.0
-Summary: A simple mjpeg server for Picamera2
-Home-page: https://github.com/roamingthings/spyglass
-License: GPL-3.0-only
-Requires-Python: >=3.8.1
-License-File: LICENSE
-License-File: NOTICE
