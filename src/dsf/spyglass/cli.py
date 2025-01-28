@@ -2,20 +2,17 @@
 
 Parse command line arguments in, invoke server.
 """
+
 import argparse
-import logging
 import re
 import sys
-
 import libcamera
-from picamera2.encoders import MJPEGEncoder
-from picamera2.outputs import FileOutput
 
+from spyglass import camera_options, logger
 from spyglass.exif import option_to_exif_orientation
 from spyglass.__version__ import __version__
 from spyglass.camera import init_camera
-from spyglass.server import StreamingOutput
-from spyglass.server import run_server
+
 
 MAX_WIDTH = 1920
 MAX_HEIGHT = 1920
@@ -28,48 +25,63 @@ def main(args=None):
     becomes sys.exit(main()).
     The __main__ entry point similarly wraps sys.exit().
     """
-    logging.info(f"Spyglass {__version__}")
+    logger.info(f"Spyglass {__version__}")
 
     if args is None:
         args = sys.argv[1:]
 
     parsed_args = get_args(args)
 
-    bind_address = parsed_args.bindaddress
-    port = parsed_args.port
+    if parsed_args.list_controls:
+        controls_str = camera_options.get_libcamera_controls_string(parsed_args.camera_num)
+        if not controls_str:
+            print(f"Camera {parsed_args.camera_num} not found")
+        else:
+            print('Available controls:\n'+controls_str)
+        return
+
     width, height = split_resolution(parsed_args.resolution)
-    stream_url = parsed_args.stream_url
-    snapshot_url = parsed_args.snapshot_url
-    orientation_exif = parsed_args.orientation_exif
-    picam2 = init_camera(
-        width,
-        height,
-        parsed_args.fps,
-        parse_autofocus(parsed_args.autofocus),
-        parsed_args.lensposition,
-        parse_autofocus_speed(parsed_args.autofocusspeed),
-        parsed_args.upsidedown,
-        parsed_args.flip_horizontal,
-        parsed_args.flip_vertical,
+    controls = parsed_args.controls
+    if parsed_args.controls_string:
+        controls += [c.split('=') for c in parsed_args.controls_string.split(',')]
+
+    cam = init_camera(
+        parsed_args.camera_num,
         parsed_args.tuning_filter,
         parsed_args.tuning_filter_dir)
 
-    output = StreamingOutput()
-    picam2.start_recording(MJPEGEncoder(), FileOutput(output))
-
+    cam.configure(width,
+                  height,
+                  parsed_args.fps,
+                  parse_autofocus(parsed_args.autofocus),
+                  parsed_args.lensposition,
+                  parse_autofocus_speed(parsed_args.autofocusspeed),
+                  controls,
+                  parsed_args.upsidedown,
+                  parsed_args.flip_horizontal,
+                  parsed_args.flip_vertical,)
     try:
-        run_server(bind_address, port, output, stream_url, snapshot_url, orientation_exif)
+        cam.start_and_run_server(parsed_args.bindaddress,
+                                 parsed_args.port,
+                                 parsed_args.stream_url,
+                                 parsed_args.snapshot_url,
+                                 parsed_args.orientation_exif)
     finally:
-        picam2.stop_recording()
-
+        cam.stop()
 
 # region args parsers
-
 
 def resolution_type(arg_value, pat=re.compile(r"^\d+x\d+$")):
     if not pat.match(arg_value):
         raise argparse.ArgumentTypeError("invalid value: <width>x<height> expected.")
     return arg_value
+
+
+def control_type(arg_value: str):
+    if '=' in arg_value:
+        return arg_value.split('=')
+    else:
+        raise argparse.ArgumentTypeError(f"invalid control: Missing value: {arg_value}")
 
 
 def orientation_type(arg_value):
@@ -105,12 +117,10 @@ def split_resolution(res):
         raise argparse.ArgumentTypeError("Maximum supported resolution is 1920x1920")
     return w, h
 
-
 # endregion args parsers
 
 
 # region cli args
-
 
 def get_args(args):
     """Parse arguments passed in from shell."""
@@ -158,10 +168,20 @@ def get_parser():
                              '  mhr90  - Mirror horizontal and rotate 90 CW\n'
                              '  r270   - Rotate 270 CW'
                         )
+    parser.add_argument('-c', '--controls', default=[], type=control_type, action='extend', nargs='*',
+                        help='Define camera controls to start with spyglass. '
+                             'Can be used multiple times.\n'
+                             'Format: <control>=<value>')
+    parser.add_argument('-cs', '--controls-string', default='', type=str,
+                        help='Define camera controls to start with spyglass. '
+                             'Input as a long string.\n'
+                             'Format: <control1>=<value1> <control2>=<value2>')
     parser.add_argument('-tf', '--tuning_filter', type=str, default=None, nargs='?', const="",
                         help='Set a tuning filter file name.')
     parser.add_argument('-tfd', '--tuning_filter_dir', type=str, default=None, nargs='?',const="",
                         help='Set the directory to look for tuning filters.')
+    parser.add_argument('--list-controls', action='store_true', help='List available camera controls and exits.')
+    parser.add_argument('-n', '--camera_num', type=int, default=0, help='Camera number to be used (Works with --list-controls)')
     return parser
 
 # endregion cli args
