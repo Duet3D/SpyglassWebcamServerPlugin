@@ -5,7 +5,7 @@ chown dsf:dsf /opt/dsf/plugins/SpyglassWebcamServer.json
 chmod 440 /opt/dsf/plugins/SpyglassWebcamServer.json
 
 chown -R dsf:dsf /opt/dsf/plugins/SpyglassWebcamServer
-chmod 550 /opt/dsf/plugins/SpyglassWebcamServer/dsf/start.sh
+chmod 550 /opt/dsf/plugins/SpyglassWebcamServer/dsf/scripts/spyglass
 chmod 550 /opt/dsf/plugins/SpyglassWebcamServer/dsf/run.py
 
 chown dsf:dsf /opt/dsf/sd/sys/spyglass.conf
