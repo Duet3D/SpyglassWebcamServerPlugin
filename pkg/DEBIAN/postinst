@@ -10,9 +10,9 @@ chmod 550 /opt/dsf/plugins/SpyglassWebcamServer/dsf/run.py
 
 # Reload the plugin manifest
 if (systemctl is-active -q duetcontrolserver && systemctl is-active -q duetpluginservice && systemctl is-active -q duetpluginservice-root); then
-	/opt/dsf/bin/PluginManager -q reload SpyglassWebcamServer
+	/opt/dsf/bin/PluginManager -q reload SpyglassWebcamServer &
 	if [ -f /opt/dsf/plugins/SpyglassWebcamServer/.start ]; then
-		/opt/dsf/bin/PluginManager -q start SpyglassWebcamServer
+		/opt/dsf/bin/PluginManager -q start SpyglassWebcamServer &
 	fi
 else
 	echo "SpyglassWebcamServer" >> /opt/dsf/conf/plugins.txt
