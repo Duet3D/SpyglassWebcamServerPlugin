@@ -1,3 +1,33 @@
+## v0.17.0 (2025-05-04)
+
+### Feat
+
+- add software encoding for mjpg and jpeg (#105)
+
+## v0.16.3 (2025-03-09)
+
+### Fix
+
+- fix --disable_webrtc to update the module variable correctly (#102)
+
+## v0.16.2 (2025-02-26)
+
+### Fix
+
+- fix crash for picamera2 v0.3.23+ (#100)
+
+## v0.16.1 (2025-02-24)
+
+### Fix
+
+- fix controls_style.css path to relative path in camera_options.py (#98)
+
+## v0.16.0 (2025-02-24)
+
+### Feat
+
+- add WebRTC stream (#84)
+
 ## v0.15.0 (2024-08-14)
 
 ### Feat

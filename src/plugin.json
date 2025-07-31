@@ -2,7 +2,7 @@
   "id": "SpyglassWebcamServer",
   "name": "Spyglass Webcam Server",
   "author": "Duet3D Ltd",
-  "version": "0.15",
+  "version": "0.17",
   "license": "GPL-3.0-only",
   "homepage": "https://github.com/Duet3D/SpyglassWebcamServerPlugin",
   "sbcRequired": true,
