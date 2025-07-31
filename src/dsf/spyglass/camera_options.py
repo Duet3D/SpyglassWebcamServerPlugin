@@ -1,7 +1,12 @@
 import libcamera
 import ast
+import pathlib
 
-def parse_dictionary_to_html_page(camera, parsed_controls='None', processed_controls='None'):
+def parse_dictionary_to_html_page(camera, parsed_controls={}, processed_controls={}):
+    if not parsed_controls:
+        parsed_controls = 'None'
+    if not processed_controls:
+        processed_controls = 'None'
     html =  """
             <!DOCTYPE html>
             <html lang="en">
@@ -49,7 +54,9 @@ def parse_dictionary_to_html_page(camera, parsed_controls='None', processed_cont
     return html
 
 def get_style():
-    with (open('resources/controls_style.css', 'r')) as f:
+    file_dir = pathlib.Path(__file__).parent.resolve()
+    controls_style = file_dir / '..' / 'resources' / 'controls_style.css'
+    with (open(controls_style, 'r')) as f:
         return f.read()
 
 def process_controls(camera, controls: list[tuple[str, str]]) -> dict[str, any]:
