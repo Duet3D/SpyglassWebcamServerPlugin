@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Finish retiring the obsolete /opt/dsf/sd/sys/spyglass.conf conffile, see preinst
+if dpkg-maintscript-helper supports rm_conffile 2>/dev/null; then
+	dpkg-maintscript-helper rm_conffile /opt/dsf/sd/sys/spyglass.conf 0.17.3~ -- "$@"
+fi
+
 # Set ownership and permissions
 chown dsf:dsf /opt/dsf/plugins/SpyglassWebcamServer.json
 chmod 440 /opt/dsf/plugins/SpyglassWebcamServer.json

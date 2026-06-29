@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Roll back the spyglass.conf conffile removal if the upgrade is aborted, see preinst
+if dpkg-maintscript-helper supports rm_conffile 2>/dev/null; then
+	dpkg-maintscript-helper rm_conffile /opt/dsf/sd/sys/spyglass.conf 0.17.3~ -- "$@"
+fi
+
 # Reload the plugin manifest
 if (systemctl is-active -q duetcontrolserver && systemctl is-active -q duetpluginservice && systemctl is-active -q duetpluginservice-root); then
 	/opt/dsf/bin/PluginManager -q reload SpyglassWebcamServer &

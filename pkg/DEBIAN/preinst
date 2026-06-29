@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# Versions up to 0.15 shipped /opt/dsf/sd/sys/spyglass.conf as a conffile. It is no
+# longer part of this package, but dropping it from the data archive alone leaves dpkg
+# owning it as an obsolete conffile, which blocks any other package from installing to
+# that path. Hand it back to dpkg properly so soleconfig can take it over, see
+# dpkg-maintscript-helper(1)
+if dpkg-maintscript-helper supports rm_conffile 2>/dev/null; then
+	dpkg-maintscript-helper rm_conffile /opt/dsf/sd/sys/spyglass.conf 0.17.3~ -- "$@"
+fi
