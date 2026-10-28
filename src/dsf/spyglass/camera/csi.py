@@ -1,55 +1,142 @@
 import io
-
-from picamera2.outputs import FileOutput
 from threading import Condition
+from typing import Any
 
-from spyglass import camera, WEBRTC_ENABLED
+import libcamera
+from picamera2.encoders import Quality, _hw_encoder_available
+from picamera2.outputs import FileOutput
+
+from spyglass import WEBRTC_ENABLED, camera, logger
+from spyglass.camera.camera import ServerConfig
+from spyglass.camera.lazy_encoder import CameraSession, LazyEncoder
 from spyglass.server.http_server import StreamingHandler
 
-class CSI(camera.Camera):
-    def start_and_run_server(self,
-            bind_address,
-            port,
-            stream_url='/stream',
-            snapshot_url='/snapshot',
-            webrtc_url='/webrtc',
-            orientation_exif=0,
-            use_sw_jpg_encoding=False):
-        if use_sw_jpg_encoding:
-            from picamera2.encoders import JpegEncoder as MJPEGEncoder
-        else:
-            from picamera2.encoders import MJPEGEncoder
-        class StreamingOutput(io.BufferedIOBase):
-            def __init__(self):
-                self.frame = None
-                self.condition = Condition()
+# Preference ordered pixel formats accepted by the picamera2 V4L2 HW and
+# JpegEncoder SW encoders.
+_PREFERRED_MAIN_STREAM_FORMATS = (
+    "YUV420",
+    "BGR888",
+    "RGB888",
+    "XBGR8888",
+    "XRGB8888",
+)
 
-            def write(self, buf):
-                with self.condition:
-                    self.frame = buf
-                    self.condition.notify_all()
+
+class StreamingOutput(io.BufferedIOBase):
+    def __init__(self) -> None:
+        self.frame: bytes | None = None
+        self.condition: Condition = Condition()
+
+    def write(self, buf: bytes) -> int:  # type: ignore[override]
+        with self.condition:
+            self.frame = buf
+            self.condition.notify_all()
+        return len(buf)
+
+
+class CSI(camera.Camera):
+    def _main_stream_config(self, width: int, height: int) -> dict[str, Any]:
+        cfg = super()._main_stream_config(width, height)
+        chosen = self._pick_main_stream_format()
+        if chosen is not None:
+            cfg["format"] = chosen
+        return cfg
+
+    def _pick_main_stream_format(self) -> str | None:
+        """Return the highest-priority encoder-compatible format the camera
+        actually supports, or ``None`` to defer to the picamera2 default."""
+        supported = self._enumerate_supported_main_stream_formats()
+        if not supported:
+            return None
+
+        preferred_fmts = (f for f in _PREFERRED_MAIN_STREAM_FORMATS if f in supported)
+        fmt = next(preferred_fmts, None)
+
+        logger.info("Supported formats: %s", sorted(supported))
+        if fmt is None:
+            logger.warning(
+                "Camera reports no encoder-compatible main-stream formats; using picamera2 default.",
+            )
+            return None
+
+        logger.info("Main stream using %r.", fmt)
+        return fmt
+
+    def _enumerate_supported_main_stream_formats(self) -> set[str]:
+        try:
+            libcamera_cfg = self.picam2.camera.generate_configuration(
+                [libcamera.StreamRole.VideoRecording]
+            )
+            return {str(pf) for pf in libcamera_cfg.at(0).formats.pixel_formats}
+        except Exception as exc:
+            logger.warning(
+                "Could not enumerate supported main-stream formats from libcamera "
+                "(%s); using picamera2 default.",
+                exc,
+            )
+            return set()
+
+    def start_and_run_server(
+        self,
+        config: ServerConfig,
+        use_sw_encoding: bool = False,
+        mjpeg_linger_seconds: float = -1,
+        webrtc_linger_seconds: float = 5,
+        mjpg_quality: Quality | None = None,
+        h264_quality: Quality | None = None,
+    ) -> None:
+        if _hw_encoder_available and not use_sw_encoding:
+            from picamera2.encoders import MJPEGEncoder
+        else:
+            from picamera2.encoders import JpegEncoder as MJPEGEncoder
+
         output = StreamingOutput()
-        def get_frame(inner_self):
+
+        def get_frame(_) -> bytes:
             with output.condition:
                 output.condition.wait()
+                assert output.frame is not None
                 return output.frame
 
-        self.picam2.start_encoder(MJPEGEncoder(), FileOutput(output))
+        session = CameraSession(self.picam2)
+        mjpeg_encoder = LazyEncoder(
+            self.picam2,
+            MJPEGEncoder,
+            FileOutput(output),
+            session=session,
+            linger_seconds=mjpeg_linger_seconds,
+            quality=mjpg_quality,
+        )
+        handler_cls = StreamingHandler
+        handler_cls.mjpeg_encoder = mjpeg_encoder
         if WEBRTC_ENABLED:
             from picamera2.encoders import H264Encoder
-            self.picam2.start_encoder(H264Encoder(), self.media_track)
-        self.picam2.start()
 
-        self._run_server(
-            bind_address,
-            port,
-            StreamingHandler,
-            get_frame,
-            stream_url=stream_url,
-            snapshot_url=snapshot_url,
-            webrtc_url=webrtc_url,
-            orientation_exif=orientation_exif
-        )
+            h264_encoder = LazyEncoder(
+                self.picam2,
+                H264Encoder,
+                self.media_track,
+                session=session,
+                linger_seconds=webrtc_linger_seconds,
+                quality=h264_quality,
+            )
+            handler_cls.h264_encoder = h264_encoder
+            if webrtc_linger_seconds < 0:
+                h264_encoder.acquire()
+        else:
+            handler_cls.h264_encoder = None
 
-    def stop(self):
-        self.picam2.stop_recording()
+        if mjpeg_linger_seconds < 0:
+            mjpeg_encoder.acquire()
+
+        self._run_server(config, StreamingHandler, get_frame)
+
+    def stop(self) -> None:
+        try:
+            self.picam2.stop_encoder()
+        except Exception:
+            pass
+        try:
+            self.picam2.stop()
+        except Exception:
+            pass

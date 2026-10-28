@@ -1,13 +1,17 @@
-import libcamera
 import ast
 import pathlib
+from typing import Any
 
-def parse_dictionary_to_html_page(camera, parsed_controls={}, processed_controls={}):
-    if not parsed_controls:
-        parsed_controls = 'None'
-    if not processed_controls:
-        processed_controls = 'None'
-    html =  """
+import libcamera
+from picamera2 import Picamera2
+
+
+def parse_dictionary_to_html_page(
+    camera: Picamera2,
+    parsed_controls: list[tuple[str, str]] | None = None,
+    processed_controls: dict[str, Any] | None = None,
+) -> str:
+    html = """
             <!DOCTYPE html>
             <html lang="en">
             """
@@ -22,8 +26,8 @@ def parse_dictionary_to_html_page(camera, parsed_controls={}, processed_controls
     html += f"""
                 <body>
                     <h1>Available camera options</h1>
-                    <h3>Parsed Controls: {parsed_controls}</h3>
-                    <h3>Processed Controls: {processed_controls}</h3>
+                    <h3>Parsed Controls: {parsed_controls if parsed_controls else "None"}</h3>
+                    <h3>Processed Controls: {processed_controls if processed_controls else "None"}</h3>
             """
     for control, values in camera.camera_controls.items():
         html += f"""
@@ -53,15 +57,19 @@ def parse_dictionary_to_html_page(camera, parsed_controls={}, processed_controls
             """
     return html
 
-def get_style():
+
+def get_style() -> str:
     file_dir = pathlib.Path(__file__).parent.resolve()
-    controls_style = file_dir / '..' / 'resources' / 'controls_style.css'
-    with (open(controls_style, 'r')) as f:
+    controls_style = file_dir / ".." / "resources" / "controls_style.css"
+    with open(controls_style) as f:
         return f.read()
 
-def process_controls(camera, controls: list[tuple[str, str]]) -> dict[str, any]:
-    controls_dict_lower = { k.lower(): k for k in camera.camera_controls.keys() }
-    if controls == None:
+
+def process_controls(
+    camera: Picamera2, controls: list[tuple[str, str]]
+) -> dict[str, Any]:
+    controls_dict_lower = {k.lower(): k for k in camera.camera_controls.keys()}
+    if controls is None:
         return {}
     processed_controls = {}
     for key, value in controls:
@@ -73,43 +81,43 @@ def process_controls(camera, controls: list[tuple[str, str]]) -> dict[str, any]:
             processed_controls[k] = v
     return processed_controls
 
-def parse_from_string(input_string: str) -> any:
+
+def parse_from_string(input_string: str) -> Any:
     try:
         return ast.literal_eval(input_string)
     except (ValueError, TypeError, SyntaxError):
         pass
 
-    if input_string.lower() in ['true', 'false']:
-        return input_string.lower() == 'true'
+    if input_string.lower() in ["true", "false"]:
+        return input_string.lower() == "true"
 
     return input_string
 
-def get_type_str(obj) -> str:
-    return str(type(obj)).split('\'')[1]
 
-def get_libcamera_controls_string(camera_num: str) -> str:
+def get_type_str(obj: Any) -> str:
+    return str(type(obj)).split("'")[1]
+
+
+def get_libcamera_controls_string(camera_num: int) -> str:
     ctrls_str = ""
     libcam_cm = libcamera.CameraManager.singleton()
     if camera_num > len(libcam_cm.cameras) - 1:
         return ctrls_str
     cam = libcam_cm.cameras[camera_num]
 
-    def rectangle_to_tuple(rectangle):
-        return (rectangle.x, rectangle.y, rectangle.width, rectangle.height)
+    def parse_value(rectangle):
+        if isinstance(rectangle, libcamera.Rectangle):
+            return (rectangle.x, rectangle.y, rectangle.width, rectangle.height)
+        return rectangle
 
     for k, v in cam.controls.items():
-        if isinstance(v.min, libcamera.Rectangle):
-            min = rectangle_to_tuple(v.min)
-            max = rectangle_to_tuple(v.max)
-            default = rectangle_to_tuple(v.default)
-        else:
-            min = v.min
-            max = v.max
-            default = v.default
+        min = parse_value(v.min)
+        max = parse_value(v.max)
+        default = parse_value(v.default)
 
         str_first = f"{k.name} ({get_type_str(min)})"
         str_second = f"min={min} max={max} default={default}"
-        str_indent = (30 - len(str_first)) * ' ' + ': '
-        ctrls_str += str_first + str_indent + str_second + '\n'
+        str_indent = (30 - len(str_first)) * " " + ": "
+        ctrls_str += str_first + str_indent + str_second + "\n"
 
     return ctrls_str.strip()

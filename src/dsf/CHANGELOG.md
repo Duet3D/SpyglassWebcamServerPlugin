@@ -1,3 +1,49 @@
+## v0.19.0 (2026-07-12)
+
+### Feat
+
+- add ice servers to WebRTC (#155)
+- add quality parameter for streams (#154)
+- update default streaming endpoint urls (#149)
+- lazy-start picamera2 encoders and camera to save idle CPU (#146)
+
+### Fix
+
+- log missing usb camera functions (#156)
+- fix resolution parsing with upper x (#157)
+- fix Readme to list correct command to list cameras (#150)
+
+## v0.18.1 (2026-04-19)
+
+### Fix
+
+- remove exception on too high resolution (#142)
+- fix type hint for camera_num (#141)
+- add alias with hyphen instead of underscore for cli (#140)
+
+## v0.18.0 (2026-01-20)
+
+### Feat
+
+- add device_path support (#128)
+
+### Dependency Update
+
+- Update aiortc requirement from ~=1.13.0 to ~=1.14.0 (#127)
+
+## v0.17.1 (2025-10-07)
+
+### Fix
+
+- fix cors issues (#123)
+
+### Dependency Update
+
+- Update aiortc requirement from ~=1.9.0 to ~=1.13.0 (#114)
+- Update setuptools requirement from ~=80.8.0 to ~=80.9.0 (#115)
+- Update setuptools requirement from ~=80.7.1 to ~=80.8.0 (#113)
+- Update setuptools requirement from ~=75.1.0 to ~=80.7.1 (#112)
+
 ## v0.17.0 (2025-05-04)
 
 ### Feat

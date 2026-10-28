@@ -8,12 +8,15 @@ Depending on your choice of camera, extra customizations may be required.
 
 This plugin requires DSF >= 3.5 and Python >= 3.8 (i.e. Debian Bookworm or newer).
 
+The WebRTC settings in `spyglass.conf` have no effect unless the `python3-aiortc` package is installed, which this plugin does not pull in. Without it, only the MJPEG stream and snapshot endpoints are served.
+
 ## Setup in DWC
 
-To configure this service in DWC, go to the `Settings` -> `General` page and make the following changes:
+To configure this service in DWC, go to the `Settings` -> `Webcam` page and make the following changes:
 
-- Set `Webcam URL` to `http://[HOSTNAME]:8080/stream`
-- Set `Webcam update interval (in ms)` to `0`
+- Enable `Show webcam feed`
+- Set `Image URL` to `http://[HOSTNAME]:8080/stream`
+- Set `Update interval` to `0`
 - Go to the `Job` -> `Webcam` page to see your live stream
 
 For snapshots it is also possible to use `http://[HOSTNAME]:8080/snapshot` instead.
@@ -35,7 +38,7 @@ To view the log of the Spyglass service, open a Linux console (or connect over S
 journalctl -u duetpluginservice -f
 ```
 
-Then restart the Motion Webcam Server plugin and look for potential errors.
+Then restart the Spyglass Webcam Server plugin and look for potential errors.
 
 
 ### Modify plugin manifest to see all messages in DWC

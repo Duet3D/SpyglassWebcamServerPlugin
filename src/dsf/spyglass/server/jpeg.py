@@ -1,32 +1,47 @@
-from spyglass import logger
-from http import HTTPStatus
+from __future__ import annotations
 
-# Used for type hinting
+from http import HTTPStatus
 from typing import TYPE_CHECKING
+
+from spyglass import logger
+
 if TYPE_CHECKING:
     from spyglass.server.http_server import StreamingHandler
 
-def start_streaming(handler: 'StreamingHandler'):
+
+def start_streaming(handler: StreamingHandler) -> None:
+    encoder = getattr(handler, "mjpeg_encoder", None)
+    if encoder is not None:
+        encoder.acquire()
     try:
         send_default_headers(handler)
-        handler.send_header('Content-Type', 'multipart/x-mixed-replace; boundary=FRAME')
+        handler.send_header("Content-Type", "multipart/x-mixed-replace; boundary=FRAME")
         handler.end_headers()
         while True:
             frame = handler.get_frame()
-            handler.wfile.write(b'--FRAME\r\n')
+            handler.wfile.write(b"--FRAME\r\n")
             if handler.exif_header is None:
                 send_jpeg_content_headers(handler, frame)
                 handler.wfile.write(frame)
-                handler.wfile.write(b'\r\n')
+                handler.wfile.write(b"\r\n")
             else:
                 send_jpeg_content_headers(handler, frame, len(handler.exif_header) - 2)
                 handler.wfile.write(handler.exif_header)
                 handler.wfile.write(frame[2:])
-                handler.wfile.write(b'\r\n')
+                handler.wfile.write(b"\r\n")
     except Exception as e:
-        logger.warning('Removed streaming client %s: %s', handler.client_address, str(e))
+        logger.warning(
+            "Removed streaming client %s: %s", handler.client_address, str(e)
+        )
+    finally:
+        if encoder is not None:
+            encoder.release()
 
-def send_snapshot(handler: 'StreamingHandler'):
+
+def send_snapshot(handler: StreamingHandler) -> None:
+    encoder = getattr(handler, "mjpeg_encoder", None)
+    if encoder is not None:
+        encoder.acquire()
     try:
         send_default_headers(handler)
         frame = handler.get_frame()
@@ -38,17 +53,23 @@ def send_snapshot(handler: 'StreamingHandler'):
             handler.wfile.write(handler.exif_header)
             handler.wfile.write(frame[2:])
     except Exception as e:
-        logger.warning(
-            'Removed client %s: %s',
-            handler.client_address, str(e))
+        logger.warning("Removed client %s: %s", handler.client_address, str(e))
+    finally:
+        if encoder is not None:
+            encoder.release()
 
-def send_default_headers(handler: 'StreamingHandler'):
+
+def send_default_headers(handler: StreamingHandler) -> None:
     handler.send_response(HTTPStatus.OK)
-    handler.send_header('Age', 0)
-    handler.send_header('Cache-Control', 'no-cache, private')
-    handler.send_header('Pragma', 'no-cache')
+    handler.send_header("Access-Control-Allow-Origin", "*")
+    handler.send_header("Age", "0")
+    handler.send_header("Cache-Control", "no-cache, private")
+    handler.send_header("Pragma", "no-cache")
 
-def send_jpeg_content_headers(handler: 'StreamingHandler', frame, extra_len=0):
-    handler.send_header('Content-Type', 'image/jpeg')
-    handler.send_header('Content-Length', str(len(frame) + extra_len))
+
+def send_jpeg_content_headers(
+    handler: StreamingHandler, frame: bytes, extra_len: int = 0
+) -> None:
+    handler.send_header("Content-Type", "image/jpeg")
+    handler.send_header("Content-Length", str(len(frame) + extra_len))
     handler.end_headers()
