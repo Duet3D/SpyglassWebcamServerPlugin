@@ -2,6 +2,28 @@
 build-backend = "setuptools.build_meta"
 requires = ["setuptools", "wheel"]
 
+[project]
+name = "spyglass"
+version = "0.19.0"
+description = "A simple mjpeg server for Picamera2"
+authors = [
+    { name="mryel00" },
+    { name="roamingthings" }
+]
+license = "GPL-3.0-only"
+license-files = ["LICENSE", "NOTICE"]
+requires-python = ">=3.10"
+dependencies = [
+    "aiortc~=1.14.0",
+]
+
+[project.scripts]
+spyglass = "spyglass.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+exclude = ["tests", "tests.*"]
+
 [tool.pytest.ini_options]
 addopts = [
     "--import-mode=importlib",
@@ -9,11 +31,10 @@ addopts = [
 pythonpath = [
   "."
 ]
-mock_use_standalone_module = true
 
 [tool.commitizen]
-name = "cz_conventional_commits"
-version = "0.17.0"
+name = "cz_customize"
+version = "0.19.0"
 tag_format = "v$version"
 version_files = [
     "spyglass/__version__.py",
@@ -21,3 +42,28 @@ version_files = [
     "pyproject.toml:version",
     "README.md:Current version"
 ]
+
+[tool.commitizen.customize]
+bump_map = {"break" = "MAJOR", ".*!" = "MAJOR", "feat" = "MINOR", "fix" = "PATCH", "chore\\(deps\\)" = "PATCH"}
+commit_parser = "^(?P<change_type>break|feat|fix|chore\\(deps\\))(!)?:\\s(?P<message>.*)?"
+change_type_map = {"feat" = "Feat", "fix" = "Fix", "chore(deps)" = "Dependency Update"}
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+extend-select = ["C90", "I", "UP"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.per-file-ignores]
+"typings/**/*.pyi" = ["F403", "F405"]
+
+[tool.basedpyright]
+pythonVersion = "3.10"
+typeCheckingMode = "standard"
+stubPath="typings"
+include=["spyglass", "run.py"]
+
+reportMissingModuleSource=false

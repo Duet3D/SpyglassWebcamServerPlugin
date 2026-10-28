@@ -1,6 +1,6 @@
 spyglasswebcamserverplugin (VERSION) stable; urgency=medium
 
-  * See https://github.com/Duet3D/SpyglassWebcamServer for a full list of changes
+  * See https://github.com/Duet3D/SpyglassWebcamServerPlugin for a full list of changes
 
- -- Duet3D Packaging Authority <pkg@duet3d.com>  Wed, 22 Jan 2024 13:51:10 +0100
+ -- Duet3D Packaging Authority <pkg@duet3d.com>  Wed, 28 Oct 2026 10:16:16 +0100
 

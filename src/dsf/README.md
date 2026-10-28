@@ -1,14 +1,14 @@
 # Spyglass
 
-> **Please note that this project is in a very early stage. Use at your own risk. Think about contributing to the
-project if you find that something is not working, and you are able to fix it. Every contribution is appreciated.**
+> **Please note that we cannot support 32-bit systems. For more information please
+have a look at [this comment](https://github.com/mryel00/spyglass/issues/116#issuecomment-3361184578).**
 
 A simple mjpeg server for the python module [Picamera2](https://github.com/raspberrypi/picamera2).
 
 With Spyglass you are able to stream videos from a camera that is supported by [libcamera](http://libcamera.org) like
 the [Raspberry Pi Camera Modules](https://www.raspberrypi.com/documentation/accessories/camera.html).
 
-Current version: 0.17.0
+Current version: 0.19.0
 
 ## Overview
 
@@ -18,7 +18,7 @@ Current version: 0.17.0
 -   [FAQ](#faq)
     -   [How can I add CLI arguments to my `spyglass.conf`?](#how-can-i-add-cli-arguments-to-my-spyglassconf)
     -   [How to use resolutions higher than maximum resolution?](#how-to-use-resolutions-higher-than-maximum-resolution)
-    -   [Why is the CPU load on my Pi5 so high?](#why-is-the-cpu-load-on-my-pi5-so-high)
+    -   [Why is there no WebRTC on my Pi5?](#why-is-there-no-webrtc-on-my-pi5)
     -   [How can I rotate the image of my stream?](#how-can-i-rotate-the-image-of-my-stream)
     -   [How to apply tuning filter?](#how-to-apply-tuning-filter)
     -   [How to use the WebRTC endpoint?](#how-to-use-the-webrtc-endpoint)
@@ -41,12 +41,12 @@ This will start the server with the following default configuration:
 -   Port: 8080
 -   Resolution: 640x480
 -   Framerate: 15 FPS
--   Stream URL: /stream
--   Snapshot URL: /snapshot
+-   Stream URL: /?action=stream
+-   Snapshot URL: /?action=snapshot
 -   WebRTC URL: /webrtc
 -   Controls URL: /controls
 
-The stream can then be accessed at `http://<IP of the server>:8080/stream`.\
+The stream can then be accessed at `http://<IP of the server>:8080/?action=stream`.\
 You might need to install dependencies, refer to the [installation section](#installation) below.
 
 ## Installation
@@ -57,7 +57,7 @@ Run following commands to install and run Spyglass as a service:
 cd ~
 sudo apt update
 sudo apt install python3-libcamera python3-kms++ python3-picamera2 git -y
-git clone https://github.com/mryel00/spyglass
+git clone https://github.com/mainsail-crew/spyglass
 cd ~/spyglass
 make install
 ```
@@ -79,9 +79,12 @@ To be able to use Moonraker update manager, add the following lines to your `moo
 ```conf
 [update_manager spyglass]
 type: git_repo
-channel: beta
 path: ~/spyglass
-origin: https://github.com/mryel00/spyglass.git
+origin: https://github.com/mainsail-crew/spyglass.git
+primary_branch: main
+virtualenv: .venv
+requirements: requirements.txt
+system_dependencies: resources/system-dependencies.json
 managed_services: spyglass
 ```
 > Make sure moonraker.asvc contains `spyglass` in the list: `cat ~/printer_data/moonraker.asvc | grep spyglass`.
@@ -89,7 +92,7 @@ managed_services: spyglass
 
 ### Configuration
 
-After installation you should find a configuration file in `~/printer_data/config/spyglass.conf`.\
+After installation, you should find a configuration file in `~/printer_data/config/spyglass.conf`.\
 Please see [spyglass.conf](resources/spyglass.conf) for the default config file and [CLI arguments](#cli-arguments) for
 all available options.
 
@@ -105,29 +108,29 @@ sudo systemctl restart spyglass
 
 On startup the following arguments are supported:
 
-| Argument                       | Description                                                                                                                        | Default      |
-|--------------------------------|------------------------------------------------------------------------------------------------------------------------------------|--------------|
-| `-b`, `--bindaddress`          | Address where the server will listen for incoming connections.                                                                     | `0.0.0.0`    |
-| `-p`, `--port`                 | Port where the server will listen for incoming connections.                                                                        | `8080`       |
-| `-r`, `--resolution`           | Resolution of the captured frames. This argument expects the format \<width\>x\<height\>.                                          | `640x480`    |
-| `-f`, `--fps`                  | Framerate in frames per second (FPS).                                                                                              | `15`         |
-| `-st`, `--stream_url`          | Set the URL for the mjpeg stream.                                                                                                  | `/stream`    |
-| `-sn`, `--snapshot_url`        | Set the URL for snapshots (single frame of stream).                                                                                | `/snapshot`  |
-| `-w`, `--webrtc_url`           | Set  the URL for WebRTC (H264 compressed stream).                                                                                  | `/webrtc`    |
-| `-af`, `--autofocus`           | Autofocus mode. Supported modes: `manual`, `continuous`.                                                                           | `continuous` |
-| `-l`, `--lensposition`         | Set focal distance. 0 for infinite focus, 0.5 for approximate 50cm. Only used with Autofocus manual.                               | `0.0`        |
-| `-s`, `--autofocusspeed`       | Autofocus speed. Supported values: `normal`, `fast`. Only used with Autofocus continuous.                                          | `normal`     |
-| `-ud`, `--upsidedown`          | Rotate the image by 180° (see [below](#image-orientation)).                                                                        |              |
-| `-fh`, `--flip_horizontal`     | Mirror the image horizontally (see [below](#image-orientation)).                                                                   |              |
-| `-fv`, `--flip_vertical`       | Mirror the image vertically (see [below](#image-orientation)).                                                                     |              |
-| `-or`, `--orientation_exif`    | Set the image orientation using an EXIF header (see [below](#image-orientation)).                                                  |              |
-| `-c`, `--controls`             | Define camera controls to start spyglass with. Can be used multiple times. This argument expects the format \<control\>=\<value\>. |              |
-| `-tf`, `--tuning_filter`       | Set a tuning filter file name.                                                                                                     |              |
-| `-tfd`, `--tuning_filter_dir`  | Set the directory to look for tuning filters.                                                                                      |              |
-| `-n`, `--camera_num`           | Camera number to be used. All cameras with their number can be shown with `libcamera-hello`.                                       | `0`          |
-| `-sw`, `--use_sw_jpg_encoding` | Use software encoding for JPEG and MJPG (recommended on Pi5).                                                                      |              |
-| `--disable_webrtc`             | Disable WebRTC encoding (recommended on Pi5).                                                                                      |              |
-| `--list-controls`              | List all available libcamera controls onto the console. Those can be used with `--controls`.                                       |              |
+| Argument                       | Description                                                                                                                        | Default             |
+|--------------------------------|------------------------------------------------------------------------------------------------------------------------------------|---------------------|
+| `-b`, `--bindaddress`          | Address where the server will listen for incoming connections.                                                                     | `0.0.0.0`           |
+| `-p`, `--port`                 | Port where the server will listen for incoming connections.                                                                        | `8080`              |
+| `-r`, `--resolution`           | Resolution of the captured frames. This argument expects the format \<width\>x\<height\>.                                          | `640x480`           |
+| `-f`, `--fps`                  | Framerate in frames per second (FPS).                                                                                              | `15`                |
+| `-st`, `--stream-url`          | Set the URL for the mjpeg stream.                                                                                                  | `/?action=stream`   |
+| `-sn`, `--snapshot-url`        | Set the URL for snapshots (single frame of stream).                                                                                | `/?action=snapshot` |
+| `-w`, `--webrtc-url`           | Set  the URL for WebRTC (H264 compressed stream).                                                                                  | `/webrtc`           |
+| `-af`, `--autofocus`           | Autofocus mode. Supported modes: `manual`, `continuous`.                                                                           | `continuous`        |
+| `-l`, `--lensposition`         | Set focal distance. 0 for infinite focus, 0.5 for approximate 50cm. Only used with Autofocus manual.                               | `0.0`               |
+| `-s`, `--autofocusspeed`       | Autofocus speed. Supported values: `normal`, `fast`. Only used with Autofocus continuous.                                          | `normal`            |
+| `-ud`, `--upsidedown`          | Rotate the image by 180° (see [below](#image-orientation)).                                                                        |                     |
+| `-fh`, `--flip-horizontal`     | Mirror the image horizontally (see [below](#image-orientation)).                                                                   |                     |
+| `-fv`, `--flip-vertical`       | Mirror the image vertically (see [below](#image-orientation)).                                                                     |                     |
+| `-or`, `--orientation-exif`    | Set the image orientation using an EXIF header (see [below](#image-orientation)).                                                  |                     |
+| `-c`, `--controls`             | Define camera controls to start spyglass with. Can be used multiple times. This argument expects the format \<control\>=\<value\>. |                     |
+| `-tf`, `--tuning-filter`       | Set a tuning filter file name.                                                                                                     |                     |
+| `-tfd`, `--tuning-filter-dir`  | Set the directory to look for tuning filters.                                                                                      |                     |
+| `-n`, `--camera-num`           | Camera number to be used. All cameras with their number can be shown with `rpicam-hello --list-cameras`.                           | `0`                 |
+| `-sw`, `--use-sw-encoding`     | Use software encoding for JPEG and MJPG (Disables WebRTC).                                                                         |                     |
+| `--force-webrtc`               | Force WebRTC streaming to start.                                                                                                   |                     |
+| `--list-controls`              | List all available libcamera controls onto the console. Those can be used with `--controls`.                                       |                     |
 
 
 ## FAQ
@@ -137,7 +140,7 @@ On startup the following arguments are supported:
 All supported CLI arguments are already inside the [defaul config](resources/spyglass.conf).
 If we add new arguments we will add them there, so please refer to it, if you want to use a new argument.
 
-In the following sections we will only refer to the CLI arguments but you can use the `spyglass.conf` for all these too.
+In the following sections we will only refer to the CLI arguments, but you can use the `spyglass.conf` for all these too.
 
 ### How to use resolutions higher than maximum resolution?
 
@@ -145,21 +148,17 @@ Please note that the maximum recommended resolution is 1920x1080 (16:9).
 
 The absolute maximum resolution is 1920x1920. If you choose a higher resolution spyglass may stop with
 `Maximum supported resolution is 1920x1920`. This is limited by the hardware (HW) encoder of the Pis.\
-You can disable this limit with `--use_sw_jpg_encoding` and `--disable_webrtc`, or the respective config in
-`spyglass.conf`, but it will take way more CPU resources to run the stream and WebRTC won't work anymore.
-Only a Pi5 you don't need to add `--disable_webrtc`, for further information please refer to
-[Pi5 recommendations](#pi5-recommendations).
+You can disable this limit with `--use-sw-encoding`, or the respective config in `spyglass.conf`, but
+it will take way more CPU resources to run the stream and WebRTC won't work anymore.
 
-### Why is the CPU load on my Pi5 so high?
+### Why is there no WebRTC on my Pi5?
 
 The Pi5 is the newest generation of Raspberry Pi SBCs but not all new things come with improvements.
 The Raspberry Pi foundation decided to remove the hardware (HW) encoders from the Pi5.
 This results in overall higher CPU usage on a Pi5 compared to previous generations.
 
-The following sections should only be followed on a Pi5.\
-WebRTC is also a big toll on your CPU. Therefore you should use `--disable_webrtc`.\
-To reduce the CPU usage further you should add `--use_sw_jpg_encoding` to make sure to use the optimized software (SW)
-encoder, instead of the HW encoder falling back to an unoptimized SW encoder.
+WebRTC is a big toll on your CPU. Therefore we disabled it by default, you can use `--force-webrtc` to enable it, but
+keep an eye on your CPU usage if you run software with critical timings like Klipper.\
 
 ### How can I rotate the image of my stream?
 
@@ -167,15 +166,15 @@ There are two ways to change the image orientation.
 
 To use the ability of picamera2 to transform the image you can use the following options when starting spyglass:
  * `-ud` or `--upsidedown` - Rotate the image by 180°
- * `-fh` or `--flip_horizontal` - Mirror the image horizontally
- * `-fv` or `--flip_vertical` - Mirror the image vertically
+ * `-fh` or `--flip-horizontal` - Mirror the image horizontally
+ * `-fv` or `--flip-vertical` - Mirror the image vertically
 
 This will work with all endpoints Spyglass offers.
 
 Alternatively you can create an EXIF header to modify the image orientation. Most modern browsers should respect
 the exif header. This will only work for the MJPG and JPEG endpoints.
 
-Use the `-or` or `--orientation_exif` option and choose from one of the following orientations
+Use the `-or` or `--orientation-exif` option and choose from one of the following orientations
  * `h` - Horizontal (normal)
  * `mh` - Mirror horizontal
  * `r180` - Rotate 180
@@ -192,7 +191,7 @@ For example to rotate the image 90 degree clockwise you would start spyglass the
 
 ### How to apply tuning filter?
 Tuning filters are used to normalize or modify the camera image output, for example, using an NoIR camera can lead to a
-pink color, whether applying a filter to it you could remove its tone pink. More information here:
+pink color, whether applying a filter to it, you could remove its tone pink. More information here:
 https://github.com/raspberrypi/picamera2/blob/main/examples/tuning_file.py
 
 
@@ -202,14 +201,14 @@ Predefined filters can be found at one of the picamera2 directories:
 - `/usr/share/libcamera/ipa/rpi/vc4`
 - `/usr/share/libcamera/ipa/raspberrypi`
 
-You can use all the files present in there in our config, e.g.: `--tuning_filter=ov5647_noir.json`
+You can use all the files present in there in our config, e.g.: `--tuning-filter=ov5647_noir.json`
 
-You can also define your own directory for filters using the `--tuning_filter_dir` argument.
+You can also define your own directory for filters using the `--tuning-filter-dir` argument.
 
 ### How to use the WebRTC endpoint?
 
 Spyglass does not deliver a streaming client for WebRTC but only the endpoint. We are using the same WebRTC protocol as
-[MediaMTX](https://github.com/bluenviron/mediamtx). Therefore you need to use e.g. Mainsail or any other client capable
+[MediaMTX](https://github.com/bluenviron/mediamtx). Therefore, you need to use e.g. Mainsail or any other client capable
 of using the MediaMTX stream.
 
 ### How to use Spyglass with Mainsail?
@@ -219,18 +218,18 @@ of using the MediaMTX stream.
 If you want to use Spyglass as a webcam source for [Mainsail](https://github.com/mainsail-crew/Mainsail) add a webcam
 with the following configuration:
 
--   URL Stream: `/webcam/stream`
--   URL Snapshot: `/webcam/snapshot`
+-   URL Stream: `/webcam/?action=stream`
+-   URL Snapshot: `/webcam/?action=snapshot`
 -   Service: `MJPEG-Streamer`
 
 Alternatively you can use WebRTC. This will take less network bandwidth and might help to fix low FPS:
 
 -   URL Stream: `/webcam/webrtc`
--   URL Snapshot: `/webcam/snapshot`
+-   URL Snapshot: `/webcam/?action=snapshot`
 -   Service: `WebRTC (MediaMTX)`
 
 WebRTC needs [aiortc](https://github.com/aiortc/aiortc) installed. This gets automatically installed with `make install`
-for further instructions, please see the [install](#installation) chapter below.
+for further instructions, please see the [installation](#installation) chapter below.
 
 ### How to use the controls endpoint?
 
